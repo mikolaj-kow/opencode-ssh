@@ -7,16 +7,39 @@ Run opencode on a remote server. Say "ssh myHost" and all commands run remotely.
 
 Use to rapidly investigate incidents on remote servers, troubleshoot, analyze logs, data etc.
 
+Targets **OpenCode V2** only, with no external runtime dependencies — the plugin uses only Node built-ins. (`Plugin.define` from `@opencode/plugin` is an identity helper, so the plain default export is equivalent.)
+
+## How it works
+
+- Opens SSH ControlMaster (`ssh -MNf ...`) for a persistent connection.
+- Hooks `tool.execute.before` to wrap `shell` calls with SSH at runtime.
+- Disables local file tools (`read`, `write`, `edit`, `patch`, `glob`, `grep`) in remote mode.
+- Injects remote-mode instructions into the system prompt via the `context` session hook.
+
+## V2 plugin shape
+
+```ts
+export default {
+  id: "opencode-ssh",
+  async setup(ctx) {
+    await ctx.tool.transform((editor) => editor.add({ ... }))
+    await ctx.tool.hook("execute.before", (event) => { ... })
+    await ctx.session.hook("context", (event) => { ... })
+    return cleanup
+  },
+}
+```
+
 ## Setup
 
-**1. Copy the plugin**
+Copy the source into the plugin directory (a real file, not a symlink — OpenCode caches symlinked entrypoints). No `npm install` is needed.
 
 ```sh
 mkdir -p ~/.config/opencode/plugins
-cp src/index.ts ~/.config/opencode/plugins/remote.ts
+cp /path/to/opencode-ssh/src/index.ts ~/.config/opencode/plugins/index.ts
 ```
 
-**2. Create an agent**
+**3. Create an agent**
 
 `.opencode/agent/remote.md`:
 ```markdown
@@ -34,15 +57,8 @@ When they say "local", use `ssh_disconnect`.
 
 1. Switch to the **Remote** agent tab.
 2. Say **"ssh myHost"** (replace `myHost` with a host from `~/.ssh/config`).
-3. Ask anything — `bash` commands automatically run on the remote server.
+3. Ask anything — `shell` commands automatically run on the remote server.
 4. Say **"local"** to disconnect.
-
-## How it works
-
-- Opens SSH ControlMaster (`ssh -MNf ...`) for a persistent connection.
-- Hooks into `tool.execute.before` to wrap `bash` calls with SSH at runtime.
-- Disables local file tools (`read`, `write`, `edit`, `glob`, `grep`) in remote mode.
-- Injects remote-mode instructions into the system prompt.
 
 ## Example `~/.ssh/config`
 
