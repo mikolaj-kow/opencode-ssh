@@ -168,7 +168,7 @@ export default {
         async execute(_input, context) {
           return { content: disconnect(context.sessionID) }
         },
-     })
+      })
     })
 
     await ctx.tool.hook("execute.before", (event) => {
@@ -176,7 +176,7 @@ export default {
       if (!state) return
 
       const input = event.input as Record<string, unknown> | undefined
-      if (!input || typeof input !=="object") return
+      if (!input || typeof input !== "object") return
 
       wrapShell(event.tool, input, state)
       neutralizeLocalTool(event.tool, input)
@@ -185,7 +185,6 @@ export default {
     await ctx.session.hook("context", (event) => {
       const state = sessionMap.get(event.sessionID)
       if (!state) return
-
       event.system.push({ type: "text", text: REMOTE_SYSTEM(state.host) })
     })
 
